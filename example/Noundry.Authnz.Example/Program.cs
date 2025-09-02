@@ -2,15 +2,18 @@ using Noundry.Authnz.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+// Add Razor Pages
+builder.Services.AddRazorPages();
 
+// Add Noundry OAuth services
 builder.Services.AddNoundryOAuth(builder.Configuration);
 
 var app = builder.Build();
 
+// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 
@@ -19,10 +22,10 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// Add OAuth middleware
 app.UseNoundryOAuth();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+// Map Razor Pages
+app.MapRazorPages();
 
 app.Run();

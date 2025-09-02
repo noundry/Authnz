@@ -1,4 +1,7 @@
-@model dynamic
+@page
+@model DashboardModel
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @{
     ViewData["Title"] = "Dashboard";
 }
@@ -17,28 +20,28 @@
                     <div class="space-y-2">
                         <div class="flex items-center space-x-3">
                             <span class="text-sm font-medium text-gray-600 w-20">ID:</span>
-                            <span class="text-sm text-gray-900">@Model?.Id</span>
+                            <span class="text-sm text-gray-900">@Model.UserInfo?.Id</span>
                         </div>
                         <div class="flex items-center space-x-3">
                             <span class="text-sm font-medium text-gray-600 w-20">Name:</span>
-                            <span class="text-sm text-gray-900">@Model?.Name</span>
+                            <span class="text-sm text-gray-900">@Model.UserInfo?.Name</span>
                         </div>
                         <div class="flex items-center space-x-3">
                             <span class="text-sm font-medium text-gray-600 w-20">Email:</span>
-                            <span class="text-sm text-gray-900">@Model?.Email</span>
+                            <span class="text-sm text-gray-900">@Model.UserInfo?.Email</span>
                         </div>
                         <div class="flex items-center space-x-3">
                             <span class="text-sm font-medium text-gray-600 w-20">Provider:</span>
-                            <span class="text-sm text-gray-900 capitalize">@Model?.Provider</span>
+                            <span class="text-sm text-gray-900 capitalize">@Model.UserInfo?.Provider</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <h2 class="text-lg font-semibold text-gray-800">Avatar</h2>
-                    @if (!string.IsNullOrEmpty(@Model?.AvatarUrl))
+                    @if (!string.IsNullOrEmpty(Model.UserInfo?.AvatarUrl))
                     {
-                        <img src="@Model.AvatarUrl" alt="User Avatar" class="w-24 h-24 rounded-full border-2 border-gray-300" />
+                        <img src="@Model.UserInfo.AvatarUrl" alt="User Avatar" class="w-24 h-24 rounded-full border-2 border-gray-300" />
                     }
                     else
                     {
