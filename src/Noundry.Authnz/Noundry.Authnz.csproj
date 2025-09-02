@@ -8,8 +8,8 @@
     <PackageId>Noundry.Authnz</PackageId>
     <PackageVersion>1.0.0</PackageVersion>
     <Authors>Noundry</Authors>
-    <Description>OAuth 2.0 abstraction library for ASP.NET Core applications with support for multiple identity providers</Description>
-    <PackageTags>oauth;authentication;authorization;security;aspnetcore;taghelpers</PackageTags>
+    <Description>Modern OAuth 2.0 abstraction library for ASP.NET Core with Razor Pages support and multiple identity providers (Google, Microsoft, GitHub, Apple, Facebook, Twitter)</Description>
+    <PackageTags>oauth;authentication;authorization;security;aspnetcore;taghelpers;razorpages;modern</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/noundry/Authnz</RepositoryUrl>

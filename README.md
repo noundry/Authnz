@@ -162,6 +162,8 @@ Create `Pages/Login.cshtml`:
 </div>
 ```
 
+### Example 2: Dashboard with User Info
+
 And `Pages/Login.cshtml.cs`:
 
 ```csharp
@@ -179,8 +181,6 @@ public class LoginModel : PageModel
     }
 }
 ```
-
-### Example 2: Dashboard with User Info
 
 Create `Pages/Dashboard.cshtml`:
 
