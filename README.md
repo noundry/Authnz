@@ -13,7 +13,7 @@ A comprehensive OAuth 2.0 abstraction library for ASP.NET Core applications with
 - ⚙️ **JSON Configuration**: Simple setup via `appsettings.json`
 - 🎨 **TagHelper Components**: Pre-built UI components with Tailwind CSS styling
 - 🔒 **Enhanced Security**: PKCE support, state validation, secure cookies
-- 🧩 **ASP.NET Core Integration**: Seamless middleware and service registration
+- 🧩 **Modern ASP.NET Core**: Works with Razor Pages, MVC, and Web APIs
 - 🎯 **Multi-Framework Support**: .NET 6, 8, and 9
 - 📱 **Responsive Design**: Mobile-first UI components
 
@@ -36,7 +36,7 @@ Add to your `appsettings.json`:
 ```json
 {
   "OAuth": {
-    "DefaultRedirectUri": "/dashboard",
+    "DefaultRedirectUri": "/Dashboard",
     "Providers": {
       "google": {
         "ClientId": "your-google-client-id.apps.googleusercontent.com",
@@ -60,7 +60,8 @@ using Noundry.Authnz.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+// Add Razor Pages
+builder.Services.AddRazorPages();
 
 // 🔥 Add Noundry OAuth services
 builder.Services.AddNoundryOAuth(builder.Configuration);
@@ -74,25 +75,34 @@ app.UseRouting();
 // 🔥 Add OAuth middleware
 app.UseNoundryOAuth();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+// Map Razor Pages
+app.MapRazorPages();
 
 app.Run();
 ```
 
 ### Step 4: Add TagHelper Support
 
-In `Views/_ViewImports.cshtml`:
+In `Pages/_ViewImports.cshtml`:
 
 ```csharp
+@using YourApp.Pages
+@namespace YourApp.Pages
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @addTagHelper *, Noundry.Authnz
 ```
 
-### Step 5: Add OAuth Components to Your Views
+### Step 5: Create Your First Razor Page
+
+Create `Pages/Index.cshtml`:
 
 ```html
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home";
+}
+
 <!-- Login page with all configured providers -->
 <div class="max-w-md mx-auto mt-8">
     <div class="bg-white shadow-md rounded-lg p-6">
@@ -102,20 +112,20 @@ In `Views/_ViewImports.cshtml`:
         <noundry-oauth-login show-all="true"></noundry-oauth-login>
     </div>
 </div>
+```
 
-<!-- Navigation bar with user status -->
-<nav class="bg-white shadow">
-    <div class="max-w-7xl mx-auto px-4 flex justify-between items-center h-16">
-        <div class="font-bold text-xl">My App</div>
-        <div class="flex items-center space-x-4">
-            <!-- Show user info when authenticated -->
-            <noundry-oauth-status show-avatar="true" show-name="true"></noundry-oauth-status>
-            
-            <!-- Logout button -->
-            <noundry-oauth-logout button-text="Sign Out"></noundry-oauth-logout>
-        </div>
-    </div>
-</nav>
+And `Pages/Index.cshtml.cs`:
+
+```csharp
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+public class IndexModel : PageModel
+{
+    public void OnGet()
+    {
+        // Page logic here
+    }
+}
 ```
 
 That's it! 🎉 Your OAuth authentication is now working.
@@ -124,9 +134,11 @@ That's it! 🎉 Your OAuth authentication is now working.
 
 ### Example 1: Simple Login Page
 
-Create `Views/Account/Login.cshtml`:
+Create `Pages/Login.cshtml`:
 
 ```html
+@page
+@model LoginModel
 @{
     ViewData["Title"] = "Sign In";
 }
@@ -150,11 +162,33 @@ Create `Views/Account/Login.cshtml`:
 </div>
 ```
 
+And `Pages/Login.cshtml.cs`:
+
+```csharp
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+public class LoginModel : PageModel
+{
+    public void OnGet()
+    {
+        // Redirect if already authenticated
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            Response.Redirect("/Dashboard");
+        }
+    }
+}
+```
+
 ### Example 2: Dashboard with User Info
 
-Create `Views/Home/Dashboard.cshtml`:
+Create `Pages/Dashboard.cshtml`:
 
 ```html
+@page
+@model DashboardModel
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @{
     ViewData["Title"] = "Dashboard";
 }
@@ -208,37 +242,121 @@ Create `Views/Home/Dashboard.cshtml`:
 </div>
 ```
 
-### Example 3: Protected Controller
+And `Pages/Dashboard.cshtml.cs`:
 
 ```csharp
-[Authorize] // Require authentication for all actions
-public class DashboardController : Controller
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Security.Claims;
+
+[Authorize] // Require authentication for this page
+public class DashboardModel : PageModel
 {
-    public IActionResult Index()
+    public UserInfo? UserInfo { get; set; }
+
+    public void OnGet()
     {
         // Get user information from claims
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var userName = User.FindFirst(ClaimTypes.Name)?.Value;
-        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-        var provider = User.FindFirst("provider")?.Value;
-        
-        ViewBag.UserInfo = new
+        UserInfo = new UserInfo
         {
-            Id = userId,
-            Name = userName,
-            Email = userEmail,
-            Provider = provider
+            Id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "",
+            Name = User.FindFirst(ClaimTypes.Name)?.Value ?? "",
+            Email = User.FindFirst(ClaimTypes.Email)?.Value ?? "",
+            Provider = User.FindFirst("provider")?.Value ?? ""
         };
+    }
+}
+
+public class UserInfo
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Email { get; set; } = "";
+    public string Provider { get; set; } = "";
+}
+```
+
+### Example 3: Form Handling with Razor Pages
+
+Create `Pages/Profile.cshtml`:
+
+```html
+@page
+@model ProfileModel
+@attribute [Authorize]
+@{
+    ViewData["Title"] = "Edit Profile";
+}
+
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white shadow rounded-lg p-6">
+        <h1 class="text-2xl font-bold mb-6">Edit Profile</h1>
         
-        return View();
+        <form method="post">
+            <div class="space-y-4">
+                <div>
+                    <label asp-for="DisplayName" class="block text-sm font-medium text-gray-700"></label>
+                    <input asp-for="DisplayName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                    <span asp-validation-for="DisplayName" class="text-red-500 text-sm"></span>
+                </div>
+                
+                <div>
+                    <label asp-for="Email" class="block text-sm font-medium text-gray-700"></label>
+                    <input asp-for="Email" readonly class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50" />
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                        Update Profile
+                    </button>
+                    <a href="/Dashboard" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+```
+
+And `Pages/Profile.cshtml.cs`:
+
+```csharp
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+
+[Authorize]
+public class ProfileModel : PageModel
+{
+    [BindProperty]
+    [Required]
+    [Display(Name = "Display Name")]
+    public string DisplayName { get; set; } = "";
+    
+    [BindProperty]
+    public string Email { get; set; } = "";
+
+    public void OnGet()
+    {
+        // Load current user data
+        DisplayName = User.FindFirst(ClaimTypes.Name)?.Value ?? "";
+        Email = User.FindFirst(ClaimTypes.Email)?.Value ?? "";
     }
     
-    [HttpGet]
-    public async Task<IActionResult> Profile()
+    public async Task<IActionResult> OnPostAsync()
     {
-        // Access user claims
-        var userClaims = User.Claims.ToDictionary(c => c.Type, c => c.Value);
-        return View(userClaims);
+        if (!ModelState.IsValid)
+        {
+            return Page();
+        }
+        
+        // Handle profile update logic here
+        TempData["Message"] = "Profile updated successfully!";
+        
+        return RedirectToPage("/Dashboard");
     }
 }
 ```
