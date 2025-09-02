@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <PackageId>Noundry.Authnz</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Authors>Noundry</Authors>
+    <Description>Source-only OAuth 2.0 abstraction library for ASP.NET Core applications with support for multiple identity providers</Description>
+    <PackageTags>oauth;authentication;authorization;security;aspnetcore;taghelpers</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OAuth" Version="6.0.0" Condition="'$(TargetFramework)' == 'net6.0'" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OAuth" Version="8.0.0" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OAuth" Version="9.0.0" Condition="'$(TargetFramework)' == 'net9.0'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="contentFiles\**\*" Pack="true" PackagePath="contentFiles\any\any\" />
+    <None Include="build\Noundry.Authnz.targets" Pack="true" PackagePath="build\" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

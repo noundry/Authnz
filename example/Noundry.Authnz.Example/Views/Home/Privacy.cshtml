@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "Privacy Policy";
+}
+
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-6">@ViewData["Title"]</h1>
+        
+        <div class="prose max-w-none">
+            <p class="text-gray-600 mb-4">
+                This is a sample privacy policy page for the Noundry OAuth Example application.
+            </p>
+            
+            <h2 class="text-xl font-semibold text-gray-800 mt-6 mb-3">Data Collection</h2>
+            <p class="text-gray-600 mb-4">
+                This application collects minimal user information through OAuth providers including:
+            </p>
+            <ul class="list-disc list-inside text-gray-600 mb-4">
+                <li>Name and email address</li>
+                <li>Profile picture (if available)</li>
+                <li>Unique identifier from the OAuth provider</li>
+            </ul>
+            
+            <h2 class="text-xl font-semibold text-gray-800 mt-6 mb-3">Data Usage</h2>
+            <p class="text-gray-600 mb-4">
+                The collected information is used solely for demonstration purposes and is not stored permanently.
+            </p>
+            
+            <h2 class="text-xl font-semibold text-gray-800 mt-6 mb-3">Security</h2>
+            <p class="text-gray-600 mb-4">
+                All OAuth flows use industry-standard security practices including PKCE (Proof Key for Code Exchange) where supported.
+            </p>
+        </div>
+        
+        <div class="mt-8">
+            <a href="/" class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded transition-colors">
+                Back to Home
+            </a>
+        </div>
+    </div>
+</div>
