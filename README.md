@@ -1,6 +1,6 @@
 # Noundry.Authnz
 
-A comprehensive OAuth 2.0 abstraction library for ASP.NET Core applications with built-in support for multiple identity providers including Google, Microsoft, GitHub, Apple, Facebook, and Twitter.
+A modern, **sessionless** OAuth 2.0 abstraction library for ASP.NET Core applications with built-in support for multiple identity providers including Google, Microsoft, GitHub, Apple, Facebook, and Twitter. Designed for scalability and microservices architecture.
 
 [![.NET](https://img.shields.io/badge/.NET-6%20%7C%208%20%7C%209-blue)](https://dotnet.microsoft.com/)
 [![NuGet](https://img.shields.io/nuget/v/Noundry.Authnz)](https://www.nuget.org/packages/Noundry.Authnz)
@@ -16,6 +16,7 @@ A comprehensive OAuth 2.0 abstraction library for ASP.NET Core applications with
 - 🧩 **Modern ASP.NET Core**: Works with Razor Pages, MVC, and Web APIs
 - 🎯 **Multi-Framework Support**: .NET 6, 8, and 9
 - 📱 **Responsive Design**: Mobile-first UI components
+- ⚡ **Sessionless & Scalable**: No session store dependencies, microservices-ready
 
 ## 🚀 Quick Start
 
@@ -595,8 +596,10 @@ Renders a logout button.
 - ✅ **Regular Rotation**: Rotate OAuth client secrets regularly
 - ✅ **Scope Minimization**: Request only necessary OAuth scopes
 - ✅ **PKCE Enabled**: Use Proof Key for Code Exchange (enabled by default)
-- ✅ **State Validation**: Validate state parameters (handled automatically)
+- ✅ **Stateless Design**: No session dependencies, uses encrypted state tokens
+- ✅ **Data Protection**: Secure state validation with ASP.NET Core Data Protection
 - ✅ **Secure Cookies**: Use secure, HTTP-only cookies
+- ✅ **Microservices Ready**: Scales horizontally without session stores
 
 ### Environment Variables
 

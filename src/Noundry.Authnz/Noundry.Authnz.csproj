@@ -6,10 +6,10 @@
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Noundry.Authnz</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
+    <PackageVersion>1.1.0</PackageVersion>
     <Authors>Noundry</Authors>
-    <Description>Modern OAuth 2.0 abstraction library for ASP.NET Core with Razor Pages support and multiple identity providers (Google, Microsoft, GitHub, Apple, Facebook, Twitter)</Description>
-    <PackageTags>oauth;authentication;authorization;security;aspnetcore;taghelpers;razorpages;modern</PackageTags>
+    <Description>Modern, sessionless OAuth 2.0 abstraction library for ASP.NET Core with Razor Pages support and multiple identity providers. Stateless design for better scalability and microservices architecture.</Description>
+    <PackageTags>oauth;authentication;authorization;security;aspnetcore;taghelpers;razorpages;modern;sessionless;stateless;scalable</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/noundry/Authnz</RepositoryUrl>
