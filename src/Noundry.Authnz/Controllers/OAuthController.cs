@@ -14,12 +14,14 @@ namespace Noundry.Authnz.Controllers;
 public class OAuthController : Controller
 {
     private readonly IOAuthService _oauthService;
+    private readonly IOAuthStateService _stateService;
     private readonly OAuthSettings _settings;
     private readonly ILogger<OAuthController> _logger;
 
-    public OAuthController(IOAuthService oauthService, IOptions<OAuthSettings> settings, ILogger<OAuthController> logger)
+    public OAuthController(IOAuthService oauthService, IOAuthStateService stateService, IOptions<OAuthSettings> settings, ILogger<OAuthController> logger)
     {
         _oauthService = oauthService;
+        _stateService = stateService;
         _settings = settings.Value;
         _logger = logger;
     }
@@ -35,10 +37,8 @@ public class OAuthController : Controller
 
         try
         {
-            var state = GenerateState(redirectUri ?? _settings.DefaultRedirectUri);
+            var state = _stateService.GenerateState(provider, redirectUri ?? _settings.DefaultRedirectUri);
             var authUrl = _oauthService.GenerateAuthorizationUrl(provider, state, redirectUri);
-            
-            HttpContext.Session.SetString($"oauth_state_{provider}", state);
             
             return Redirect(authUrl);
         }
@@ -66,10 +66,9 @@ public class OAuthController : Controller
 
         try
         {
-            var expectedState = HttpContext.Session.GetString($"oauth_state_{provider}");
-            if (expectedState != state)
+            if (string.IsNullOrEmpty(state) || !_stateService.ValidateState(provider, state, out var redirectUriFromState))
             {
-                _logger.LogWarning("OAuth state mismatch for provider {Provider}", provider);
+                _logger.LogWarning("OAuth state validation failed for provider {Provider}", provider);
                 return BadRequest("Invalid state parameter");
             }
 
@@ -82,10 +81,8 @@ public class OAuthController : Controller
 
             await SignInUserAsync(userInfo);
             
-            HttpContext.Session.Remove($"oauth_state_{provider}");
-            
-            var redirectUri = ExtractRedirectUriFromState(state) ?? _settings.DefaultRedirectUri;
-            return Redirect(redirectUri);
+            var finalRedirectUri = redirectUriFromState ?? _settings.DefaultRedirectUri;
+            return Redirect(finalRedirectUri);
         }
         catch (Exception ex)
         {
@@ -134,29 +131,4 @@ public class OAuthController : Controller
             });
     }
 
-    private static string GenerateState(string redirectUri)
-    {
-        var stateData = new { redirectUri, timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() };
-        var stateJson = System.Text.Json.JsonSerializer.Serialize(stateData);
-        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(stateJson));
-    }
-
-    private static string? ExtractRedirectUriFromState(string? state)
-    {
-        if (string.IsNullOrEmpty(state))
-            return null;
-
-        try
-        {
-            var stateJson = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(state));
-            using var document = System.Text.Json.JsonDocument.Parse(stateJson);
-            return document.RootElement.TryGetProperty("redirectUri", out var redirectUri) 
-                ? redirectUri.GetString() 
-                : null;
-        }
-        catch
-        {
-            return null;
-        }
-    }
 }

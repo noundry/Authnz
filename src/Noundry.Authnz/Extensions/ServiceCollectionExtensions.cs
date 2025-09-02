@@ -28,14 +28,9 @@ public static class ServiceCollectionExtensions
 
         services.AddHttpClient<IOAuthService, OAuthService>();
         services.AddScoped<IOAuthService, OAuthService>();
-        
-        services.AddSession(options =>
-        {
-            options.IdleTimeout = TimeSpan.FromMinutes(20);
-            options.Cookie.HttpOnly = true;
-            options.Cookie.IsEssential = true;
-        });
+        services.AddScoped<IOAuthStateService, OAuthStateService>();
 
+        services.AddDataProtection();
         services.AddHttpContextAccessor();
         
         return services;

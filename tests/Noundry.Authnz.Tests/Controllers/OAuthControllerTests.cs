@@ -16,11 +16,11 @@ namespace Noundry.Authnz.Tests.Controllers;
 public class OAuthControllerTests
 {
     private Mock<IOAuthService> _mockOAuthService;
+    private Mock<IOAuthStateService> _mockStateService;
     private Mock<ILogger<OAuthController>> _mockLogger;
     private OAuthSettings _settings;
     private OAuthController _controller = null!;
     private Mock<HttpContext> _mockHttpContext;
-    private Mock<ISession> _mockSession;
     private Mock<IAuthenticationService> _mockAuthService;
     private Mock<IServiceProvider> _mockServiceProvider;
 
@@ -28,6 +28,7 @@ public class OAuthControllerTests
     public void Setup()
     {
         _mockOAuthService = new Mock<IOAuthService>();
+        _mockStateService = new Mock<IOAuthStateService>();
         _mockLogger = new Mock<ILogger<OAuthController>>();
         _settings = new OAuthSettings
         {
@@ -37,14 +38,12 @@ public class OAuthControllerTests
         };
 
         var options = Options.Create(_settings);
-        _controller = new OAuthController(_mockOAuthService.Object, options, _mockLogger.Object);
+        _controller = new OAuthController(_mockOAuthService.Object, _mockStateService.Object, options, _mockLogger.Object);
 
         _mockHttpContext = new Mock<HttpContext>();
-        _mockSession = new Mock<ISession>();
         _mockAuthService = new Mock<IAuthenticationService>();
         _mockServiceProvider = new Mock<IServiceProvider>();
         
-        _mockHttpContext.Setup(x => x.Session).Returns(_mockSession.Object);
         _mockHttpContext.Setup(x => x.RequestServices).Returns(_mockServiceProvider.Object);
         _mockServiceProvider.Setup(x => x.GetService(typeof(IAuthenticationService)))
             .Returns(_mockAuthService.Object);
@@ -65,7 +64,8 @@ public class OAuthControllerTests
     public void Login_ConfiguredProvider_RedirectsToAuthUrl()
     {
         _mockOAuthService.Setup(x => x.IsProviderConfigured("google")).Returns(true);
-        _mockOAuthService.Setup(x => x.GenerateAuthorizationUrl("google", It.IsAny<string>(), null))
+        _mockStateService.Setup(x => x.GenerateState("google", "/dashboard")).Returns("test-state");
+        _mockOAuthService.Setup(x => x.GenerateAuthorizationUrl("google", "test-state", null))
             .Returns("https://accounts.google.com/oauth/authorize?client_id=test");
 
         var result = _controller.Login("google") as RedirectResult;
@@ -116,15 +116,11 @@ public class OAuthControllerTests
             Provider = "google"
         };
 
-        var sessionKey = "oauth_state_google";
-        var expectedState = "valid-state";
-        _mockSession.Setup(x => x.TryGetValue(sessionKey, out It.Ref<byte[]>.IsAny))
-            .Returns((string key, out byte[] value) =>
-            {
-                value = System.Text.Encoding.UTF8.GetBytes(expectedState);
-                return true;
-            });
-        _mockOAuthService.Setup(x => x.HandleCallbackAsync("google", "test-code", "valid-state"))
+        var testState = "valid-state";
+        var redirectUri = "/dashboard";
+        _mockStateService.Setup(x => x.ValidateState("google", testState, out redirectUri))
+            .Returns(true);
+        _mockOAuthService.Setup(x => x.HandleCallbackAsync("google", "test-code", testState))
             .ReturnsAsync(userInfo);
 
         var result = await _controller.Callback("google", "test-code", "valid-state");

@@ -12,7 +12,7 @@ A comprehensive OAuth 2.0 abstraction library for ASP.NET Core applications with
 - 🏗️ **Binary NuGet Package**: Easy integration with standard project references
 - ⚙️ **JSON Configuration**: Simple setup via `appsettings.json`
 - 🎨 **TagHelper Components**: Pre-built UI components with Tailwind CSS styling
-- 🔒 **Enhanced Security**: PKCE support, state validation, secure cookies
+- 🔒 **Enhanced Security**: PKCE support, stateless design, data protection, secure cookies
 - 🧩 **Modern ASP.NET Core**: Works with Razor Pages, MVC, and Web APIs
 - 🎯 **Multi-Framework Support**: .NET 6, 8, and 9
 - 📱 **Responsive Design**: Mobile-first UI components
@@ -643,19 +643,18 @@ builder.Configuration.AddAzureKeyVault(/* key vault config */);
 
 **❌ "Invalid state parameter"**
 ```csharp
-// ✅ Ensure session is configured BEFORE OAuth middleware
-builder.Services.AddSession(); // Add this
-app.UseSession(); // Before UseNoundryOAuth()
-app.UseNoundryOAuth();
+// ✅ State validation uses secure data protection - no additional setup needed
+// The library automatically handles state validation using ASP.NET Core Data Protection
+// Ensure you haven't modified the data protection configuration
 ```
 
 **❌ Authentication not persisting**
 ```csharp
 // ✅ Correct middleware order
 app.UseRouting();
-app.UseSession();        // 1. Session first
-app.UseAuthentication(); // 2. Then authentication  
-app.UseAuthorization();  // 3. Then authorization
+app.UseAuthentication(); // 1. Authentication first
+app.UseAuthorization();  // 2. Then authorization
+// No session middleware needed!
 ```
 
 **❌ HTTPS redirect errors in development**
