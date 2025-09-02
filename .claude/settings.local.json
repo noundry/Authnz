@@ -3,7 +3,12 @@
     "allow": [
       "WebFetch(domain:github.com)",
       "Bash(mkdir:*)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(gh repo create:*)",
+      "Bash(dotnet build)",
+      "Bash(dotnet test)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.Extensions.Options;
 using Noundry.Authnz.Models;
 using Noundry.Authnz.Services;
+using System.Text;
 
 namespace Noundry.Authnz.TagHelpers;
 

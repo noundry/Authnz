@@ -10,8 +10,4 @@
     <ProjectReference Include="..\..\src\Noundry.Authnz\Noundry.Authnz.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\..\src\Noundry.Authnz\contentFiles\**\*.cs" />
-  </ItemGroup>
-
 </Project>

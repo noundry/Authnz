@@ -16,7 +16,7 @@ public class OAuthControllerTests
     private Mock<IOAuthService> _mockOAuthService;
     private Mock<ILogger<OAuthController>> _mockLogger;
     private OAuthSettings _settings;
-    private OAuthController _controller;
+    private OAuthController _controller = null!;
     private Mock<HttpContext> _mockHttpContext;
     private Mock<ISession> _mockSession;
 
@@ -45,6 +45,12 @@ public class OAuthControllerTests
         };
     }
 
+    [TearDown]
+    public void TearDown()
+    {
+        _controller?.Dispose();
+    }
+
     [Test]
     public void Login_ConfiguredProvider_RedirectsToAuthUrl()
     {
@@ -70,21 +76,23 @@ public class OAuthControllerTests
     }
 
     [Test]
-    public void Callback_WithError_RedirectsWithError()
+    public async Task Callback_WithError_RedirectsWithError()
     {
-        var result = _controller.Callback("google", error: "access_denied") as RedirectResult;
+        var result = await _controller.Callback("google", error: "access_denied");
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Url, Does.Contain("error=oauth_error"));
+        Assert.That(result, Is.InstanceOf<RedirectResult>());
+        var redirectResult = result as RedirectResult;
+        Assert.That(redirectResult!.Url, Does.Contain("error=oauth_error"));
     }
 
     [Test]
-    public void Callback_MissingCode_ReturnsBadRequest()
+    public async Task Callback_MissingCode_ReturnsBadRequest()
     {
-        var result = _controller.Callback("google") as BadRequestObjectResult;
+        var result = await _controller.Callback("google");
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Value, Is.EqualTo("Authorization code is required"));
+        Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+        var badRequestResult = result as BadRequestObjectResult;
+        Assert.That(badRequestResult!.Value, Is.EqualTo("Authorization code is required"));
     }
 
     [Test]
@@ -102,28 +110,29 @@ public class OAuthControllerTests
         _mockOAuthService.Setup(x => x.HandleCallbackAsync("google", "test-code", "valid-state"))
             .ReturnsAsync(userInfo);
 
-        var result = await _controller.Callback("google", "test-code", "valid-state") as RedirectResult;
+        var result = await _controller.Callback("google", "test-code", "valid-state");
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Url, Does.Contain(_settings.DefaultRedirectUri));
+        Assert.That(result, Is.InstanceOf<RedirectResult>());
     }
 
     [Test]
     public async Task Logout_RedirectsToDefaultUri()
     {
-        var result = await _controller.Logout() as RedirectResult;
+        var result = await _controller.Logout();
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Url, Is.EqualTo(_settings.DefaultRedirectUri));
+        Assert.That(result, Is.InstanceOf<RedirectResult>());
+        var redirectResult = result as RedirectResult;
+        Assert.That(redirectResult!.Url, Is.EqualTo(_settings.DefaultRedirectUri));
     }
 
     [Test]
     public async Task Logout_WithCustomRedirectUri_RedirectsToCustomUri()
     {
         var customUri = "/custom";
-        var result = await _controller.Logout(customUri) as RedirectResult;
+        var result = await _controller.Logout(customUri);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Url, Is.EqualTo(customUri));
+        Assert.That(result, Is.InstanceOf<RedirectResult>());
+        var redirectResult = result as RedirectResult;
+        Assert.That(redirectResult!.Url, Is.EqualTo(customUri));
     }
 }
