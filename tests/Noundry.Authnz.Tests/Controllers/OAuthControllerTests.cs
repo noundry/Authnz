@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -19,6 +21,8 @@ public class OAuthControllerTests
     private OAuthController _controller = null!;
     private Mock<HttpContext> _mockHttpContext;
     private Mock<ISession> _mockSession;
+    private Mock<IAuthenticationService> _mockAuthService;
+    private Mock<IServiceProvider> _mockServiceProvider;
 
     [SetUp]
     public void Setup()
@@ -37,7 +41,13 @@ public class OAuthControllerTests
 
         _mockHttpContext = new Mock<HttpContext>();
         _mockSession = new Mock<ISession>();
+        _mockAuthService = new Mock<IAuthenticationService>();
+        _mockServiceProvider = new Mock<IServiceProvider>();
+        
         _mockHttpContext.Setup(x => x.Session).Returns(_mockSession.Object);
+        _mockHttpContext.Setup(x => x.RequestServices).Returns(_mockServiceProvider.Object);
+        _mockServiceProvider.Setup(x => x.GetService(typeof(IAuthenticationService)))
+            .Returns(_mockAuthService.Object);
         
         _controller.ControllerContext = new ControllerContext
         {
@@ -106,7 +116,14 @@ public class OAuthControllerTests
             Provider = "google"
         };
 
-        _mockSession.Setup(x => x.GetString("oauth_state_google")).Returns("valid-state");
+        var sessionKey = "oauth_state_google";
+        var expectedState = "valid-state";
+        _mockSession.Setup(x => x.TryGetValue(sessionKey, out It.Ref<byte[]>.IsAny))
+            .Returns((string key, out byte[] value) =>
+            {
+                value = System.Text.Encoding.UTF8.GetBytes(expectedState);
+                return true;
+            });
         _mockOAuthService.Setup(x => x.HandleCallbackAsync("google", "test-code", "valid-state"))
             .ReturnsAsync(userInfo);
 
