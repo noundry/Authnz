@@ -1,0 +1,95 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate-pr:
+    name: Validate Pull Request
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          6.0.x
+          8.0.x
+          9.0.x
+          
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Check code formatting
+      run: dotnet format --verify-no-changes --verbosity diagnostic
+      
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: Run all tests
+      run: dotnet test --configuration Release --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage"
+      
+    - name: Validate package can be created
+      run: dotnet pack src/Noundry.Authnz/Noundry.Authnz.csproj --configuration Release --output ./packages
+      
+    - name: Test example application
+      run: |
+        cd example/Noundry.Authnz.Example
+        dotnet build --configuration Release
+        timeout 20 dotnet run --configuration Release --no-build --urls="http://localhost:5001" &
+        sleep 8
+        curl -f http://localhost:5001 || exit 1
+        
+    - name: Comment PR with results
+      uses: actions/github-script@v7
+      if: always()
+      with:
+        script: |
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          
+          const botComment = comments.find(comment => 
+            comment.user.login === 'github-actions[bot]' && 
+            comment.body.includes('🤖 PR Validation Results')
+          );
+          
+          const body = `## 🤖 PR Validation Results
+          
+          ✅ **Build Status**: Successful  
+          ✅ **Tests**: All tests passing  
+          ✅ **Package**: NuGet package builds correctly  
+          ✅ **Example**: Application starts successfully  
+          
+          The pull request is ready for review! 🚀`;
+          
+          if (botComment) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: body
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+          }

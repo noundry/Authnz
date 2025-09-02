@@ -1,0 +1,99 @@
+name: Release and Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.1.0)'
+        required: true
+        type: string
+
+jobs:
+  publish-nuget:
+    name: Publish to NuGet
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: Run tests
+      run: dotnet test --configuration Release --no-build
+      
+    - name: Pack NuGet package
+      run: dotnet pack src/Noundry.Authnz/Noundry.Authnz.csproj --configuration Release --output ./packages
+      
+    - name: Publish to NuGet
+      run: dotnet nuget push ./packages/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+  create-github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Build and pack
+      run: |
+        dotnet restore
+        dotnet build --configuration Release
+        dotnet pack src/Noundry.Authnz/Noundry.Authnz.csproj --configuration Release --output ./packages
+        
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.event.inputs.version }}
+        release_name: Noundry.Authnz v${{ github.event.inputs.version }}
+        body: |
+          ## 🚀 Noundry.Authnz v${{ github.event.inputs.version }}
+          
+          ### ✨ Features
+          - Modern, sessionless OAuth 2.0 implementation
+          - Support for Google, Microsoft, GitHub, Apple, Facebook, Twitter
+          - Razor Pages and MVC compatible
+          - Enhanced security with data protection
+          - Scalable microservices architecture
+          
+          ### 📦 Installation
+          ```bash
+          dotnet add package Noundry.Authnz --version ${{ github.event.inputs.version }}
+          ```
+          
+          ### 📖 Documentation
+          See the [README.md](https://github.com/noundry/Authnz#readme) for complete integration guide.
+        draft: false
+        prerelease: false
+        
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./packages/Noundry.Authnz.${{ github.event.inputs.version }}.nupkg
+        asset_name: Noundry.Authnz.${{ github.event.inputs.version }}.nupkg
+        asset_content_type: application/zip

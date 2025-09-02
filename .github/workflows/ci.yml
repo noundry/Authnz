@@ -1,0 +1,150 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        dotnet-version: ['6.0.x', '8.0.x', '9.0.x']
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET ${{ matrix.dotnet-version }}
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+        
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+          
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: Run tests
+      run: dotnet test --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+      
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.dotnet-version }}
+        path: |
+          **/TestResults/*.xml
+          **/TestResults/*.trx
+          
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v3
+      if: matrix.dotnet-version == '9.0.x'
+      with:
+        name: coverage-report
+        path: '**/coverage.cobertura.xml'
+
+  package-validation:
+    name: Package Validation
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build and pack
+      run: dotnet pack src/Noundry.Authnz/Noundry.Authnz.csproj --configuration Release --output ./packages
+      
+    - name: Validate package
+      run: |
+        # Check package was created
+        ls -la ./packages/
+        
+        # Validate package contents
+        dotnet tool install --global dotnet-validate --version 0.0.1-preview.304
+        dotnet validate package local ./packages/Noundry.Authnz.*.nupkg
+        
+    - name: Upload package artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: nuget-package
+        path: ./packages/*.nupkg
+
+  example-validation:
+    name: Example Application Validation
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build example application
+      run: dotnet build example/Noundry.Authnz.Example/Noundry.Authnz.Example.csproj --configuration Release
+      
+    - name: Test example startup
+      run: |
+        cd example/Noundry.Authnz.Example
+        timeout 30 dotnet run --configuration Release --no-build --urls="http://localhost:5000" &
+        sleep 10
+        
+        # Test that the application responds
+        curl -f http://localhost:5000 || exit 1
+        echo "Example application validated successfully"
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Install security scanner
+      run: dotnet tool install --global security-scan --version 5.6.7
+      
+    - name: Run security scan
+      run: security-scan --project=./Noundry.Authnz.sln --format=json --output=security-report.json
+      continue-on-error: true
+      
+    - name: Upload security report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-report
+        path: security-report.json
